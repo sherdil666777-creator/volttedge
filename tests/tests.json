@@ -1,0 +1,97 @@
+[
+  {
+    "name": "Browse product catalogue and submit an enquiry",
+    "sanity": true,
+    "viewport": "desktop",
+    "covers": [
+      "product catalogue",
+      "category filtering",
+      "product search",
+      "price sorting",
+      "cart and WhatsApp order handoff",
+      "quotation enquiry validation"
+    ],
+    "description": "Verifies the primary product browsing and customer enquiry journey.",
+    "steps": [
+      "Browse products and filter a category",
+      "Add a product to the cart and request a WhatsApp quotation",
+      "Submit a complete contact enquiry"
+    ],
+    "expected": "Products filter correctly, the cart contains the selected item, WhatsApp opens with order details, and the contact enquiry confirms receipt."
+  },
+  {
+    "name": "Explore the Electrical and Solar Knowledge Center",
+    "viewport": "mobile",
+    "covers": [
+      "knowledge center immediately below homepage hero",
+      "category filters",
+      "electrical topic search",
+      "expandable topic details",
+      "Urdu explanations",
+      "brand and model verification notes",
+      "electrical safety warnings"
+    ],
+    "description": "Checks that mobile visitors can search and read the new educational guides.",
+    "steps": [
+      "Scroll below the homepage banner to the Electrical & Solar Knowledge Center",
+      "Search for LiFePO4 and open the matching battery guide",
+      "Choose Protection and open the MCB and SPD guide",
+      "Read the Urdu explanation and safety warning"
+    ],
+    "expected": "The knowledge center appears before the About section, search and category filters show relevant guides, topic details expand, and safety guidance is visible."
+  },
+  {
+    "name": "Use the solar and battery planning calculators",
+    "viewport": "desktop",
+    "covers": [
+      "battery backup calculator",
+      "solar array size calculator",
+      "input validation",
+      "estimate caveats"
+    ],
+    "description": "Verifies both calculators respond to changed numeric inputs and reject invalid values.",
+    "steps": [
+      "Change battery capacity and average load in the backup estimator",
+      "Confirm the estimated runtime changes",
+      "Change daily energy and sun hours in the PV estimator",
+      "Enter zero for a required value"
+    ],
+    "expected": "Both estimates update from entered values, and zero or invalid inputs display a validation prompt rather than a misleading result."
+  },
+  {
+    "name": "Complete a service booking and track its status",
+    "viewport": "desktop",
+    "covers": [
+      "service booking validation",
+      "booking persistence",
+      "booking status tracking",
+      "incomplete form guardrail"
+    ],
+    "description": "Verifies the existing service booking flow remains available after the learning center update.",
+    "steps": [
+      "Submit a complete service booking with a future date",
+      "Record the booking reference",
+      "Track the booking using its reference and phone number",
+      "Try submitting with a required field missing"
+    ],
+    "expected": "A booking reference is issued and can be tracked; incomplete input is rejected."
+  },
+  {
+    "name": "Keep reviews, gallery and administrator tools available",
+    "viewport": "mobile",
+    "covers": [
+      "customer review submission",
+      "moderated project media",
+      "administrator access",
+      "learning content administration",
+      "responsive layout"
+    ],
+    "description": "Checks the existing community and admin workflows remain reachable after the homepage enhancement.",
+    "steps": [
+      "Submit a customer review and a project media item",
+      "Open the public review and project gallery",
+      "Open the administrator dashboard and review its learning content controls"
+    ],
+    "expected": "Submissions remain moderated, existing gallery and administrator controls remain reachable, and the page remains usable on mobile."
+  }
+]
