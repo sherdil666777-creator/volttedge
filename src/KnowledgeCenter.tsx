@@ -1,137 +1,148 @@
-import { useMemo, useState } from 'react';
-import {
-  Search, Sun, BatteryCharging, ShieldCheck, Zap,
-  Calculator, BookOpen, AlertTriangle, MessageCircle, ChevronDown, Info
-} from 'lucide-react';
+import { BatteryCharging, Cable, Mail, MessageCircle, ShieldCheck, Sun, Wrench, Zap } from 'lucide-react';
 
-const topics = [
-  { category: 'Inverters', title: 'Solar inverter basics', summary: 'What an inverter does and how it converts DC electricity into AC power.', detail: 'Solar panels produce direct current (DC). An inverter converts DC into alternating current (AC) used by most household appliances. Depending on its design, it may also manage batteries, grid interaction, monitoring and protective shutdowns.', urdu: 'سولر پینل DC بجلی بناتے ہیں۔ انورٹر اسے AC بجلی میں تبدیل کرتا ہے تاکہ عام گھریلو آلات چل سکیں۔', use: 'Homes, shops, offices and solar plants.', types: 'Hybrid, grid-tied (on-grid), and off-grid. Their grid and battery behaviour differs; check the exact model manual.', select: 'Start with the simultaneous running load, motor starting surge, phase requirement, solar-array limits, battery plan and future expansion.', caution: 'Do not choose capacity from panel wattage alone. Verify continuous output, surge rating, MPPT voltage/current limits and local grid rules.' },
-  { category: 'Inverters', title: 'Capacity, phases and outputs', summary: 'Understand 1, 3, 5, 6, 8, 10 and 12kW ratings; single/three phase; single/dual output.', detail: 'kW describes real output power. A 1kW unit is not automatically suitable for a 1kW motor because motors and compressors can draw higher starting current. Single-phase and three-phase models serve different supply systems. Dual-output models may provide separately controlled priority or backup loads, but the exact behaviour is model-specific.', urdu: 'kW انورٹر کی طاقت بتاتا ہے۔ موٹر اور اے سی شروع ہوتے وقت زیادہ کرنٹ لے سکتے ہیں، اس لیے صرف واٹ جمع کرنا کافی نہیں۔', use: 'Choose phase to match the building supply and connected loads.', types: 'Common nominal capacities include 1, 3, 5, 6, 8, 10, 12kW and larger. Single output vs dual output varies by model.', select: 'List running watts and starting surge; allow engineering margin; confirm phase, output voltage and neutral/earthing requirements.', caution: 'Never connect a three-phase load to a single-phase output or parallel outputs unless the manufacturer explicitly permits it.' },
-  { category: 'Inverters', title: 'Hybrid, on-grid and off-grid', summary: 'Compare grid-connected, battery-based and hybrid operation.', detail: 'On-grid inverters synchronise with the utility and usually shut down during a grid outage unless designed with a separate backup function. Off-grid inverters form a local AC supply and typically rely on batteries or another supported source. Hybrid inverters can coordinate solar, grid and batteries in supported configurations.', urdu: 'On-grid عام طور پر گرڈ کے ساتھ چلتا ہے، off-grid الگ بجلی کا نظام بناتا ہے، جبکہ hybrid مختلف ذرائع کو کنٹرول کر سکتا ہے۔', use: 'Select based on whether backup during outages is required.', types: 'Grid-tied, off-grid and hybrid architectures.', select: 'Ask whether loads must run during grid failure and whether batteries are planned.', caution: 'Grid export and anti-islanding settings must follow local utility requirements.' },
-  { category: 'Inverters', title: 'MPPT, DC voltage and IP rating', summary: 'Understand MPPT, 24V/48V/high-voltage battery systems and IP65 protection.', detail: 'MPPT is a control method that adjusts the solar operating point to harvest available panel power. 24V and 48V refer to nominal low-voltage battery systems; some inverters use high-voltage battery packs. IP65 indicates dust-tight protection and water jets under specified test conditions; it does not mean the unit can be submerged or installed anywhere outdoors.', urdu: 'MPPT سولر پینل سے بہتر دستیاب پاور حاصل کرنے میں مدد دیتا ہے۔ IP65 پانی میں ڈبونے کی اجازت نہیں دیتا۔', use: 'Sizing solar strings and choosing an installation environment.', types: 'One or multiple MPPT trackers; low-voltage or high-voltage battery architecture.', select: 'Compare MPPT start voltage, operating range, max PV voltage/current, tracker count and battery voltage.', caution: 'Never exceed maximum PV open-circuit voltage, especially in cold weather. Follow enclosure and clearance instructions.' },
-  { category: 'Inverters', title: 'Brand and model research', summary: 'Explore Inverex, Knox, SunLife, Grid Sun, Tesla, Apex and other brands.', detail: 'A brand name alone does not establish a model’s capacity, warranty, phase, battery protocol, IP rating or batteryless support. Compare the exact model number, hardware revision, official datasheet, installation manual and local warranty terms.', urdu: 'صرف برانڈ کا نام کافی نہیں۔ ہر ماڈل کی اصل datasheet اور manual دیکھیں۔', use: 'Shortlisting products before purchase.', types: 'Inverex, Knox, SunLife, Grid Sun, Tesla, Apex and other available manufacturers.', select: 'Request the exact model code and official documents from the seller.', caution: 'VoltEdge does not claim a particular model supports batteryless use or a particular battery until its documentation is checked.' },
-  { category: 'Batteries', title: 'Lead-acid, tubular and lithium batteries', summary: 'Compare common battery chemistries and their maintenance needs.', detail: 'Lead-acid batteries include flooded and sealed designs; tubular batteries are a lead-acid construction often used in backup applications. Lithium batteries include several chemistries. LiFePO4 (lithium iron phosphate) is widely used for stationary storage because of its cycle life and thermal stability, but it still requires correct protection and charging.', urdu: 'Tubular بیٹری بھی lead-acid کی قسم ہے۔ LiFePO4 ایک مختلف lithium کیمسٹری ہے۔', use: 'Backup energy storage for supported inverter systems.', types: 'Flooded lead-acid, tubular, AGM/gel and lithium-ion such as LiFePO4.', select: 'Compare usable kWh, discharge limits, cycle-life test conditions, warranty, BMS and inverter communication.', caution: 'Do not mix old and new batteries or different chemistries/voltages in one bank unless explicitly approved.' },
-  { category: 'Batteries', title: 'Battery volts, Ah, kWh and BMS', summary: 'Understand 12V, 24V, 48V systems and battery capacity.', detail: 'Voltage (V) describes electrical potential. Amp-hours (Ah) describe charge capacity at stated conditions. Approximate nominal energy is volts × Ah ÷ 1000 = kWh. Usable energy is lower after reserve limits, conversion losses and battery discharge limits. A BMS monitors lithium cells and may protect against over/under-voltage, over-current and temperature faults.', urdu: 'تقریبی توانائی = وولٹ × Ah ÷ 1000۔ اصل استعمال کے قابل توانائی اس سے کم ہو سکتی ہے۔', use: 'Estimating storage size and checking inverter compatibility.', types: '12V, 24V, 48V nominal systems and manufacturer-defined high-voltage packs.', select: 'Check nominal voltage, operating range, max charge/discharge current, BMS protocol and parallel limits.', caution: 'Never bypass a BMS or connect a battery outside its voltage/current specifications.' },
-  { category: 'Batteries', title: 'Battery backup time', summary: 'Estimate runtime from usable energy and appliance load.', detail: 'A practical estimate is usable battery energy in kWh × inverter efficiency ÷ average AC load in kW. Actual runtime changes with temperature, battery age, discharge limit, load variation, inverter consumption and surge events.', urdu: 'بیک اپ وقت کا اندازہ usable kWh اور آلات کے اوسط load سے لگائیں؛ اصل وقت مختلف ہو سکتا ہے۔', use: 'Planning lights, fans, routers and essential loads.', types: 'Small essential-load backup through larger home storage.', select: 'Measure realistic average watts and decide how many hours of backup are needed.', caution: 'Do not use nominal battery energy as fully usable energy.' },
-  { category: 'Batteries', title: 'Lithium batteries: 5, 10 and 15kWh', summary: 'Compare storage sizes, cycle life, charging and compatibility.', detail: 'A 5kWh battery stores less nominal energy than a 10kWh or 15kWh unit. Cycle-life claims depend on depth of discharge, temperature, charge rate and end-of-life definition. LiFePO4 packs usually include a BMS; some communicate with the inverter over CAN or RS485, while others use approved voltage-based settings.', urdu: '5، 10 اور 15kWh بیٹریوں میں ذخیرہ شدہ توانائی مختلف ہوتی ہے۔ cycle life ہمیشہ test conditions کے ساتھ پڑھیں۔', use: 'Residential and commercial energy storage.', types: 'Wall-mounted, rack and floor-standing battery packs.', select: 'Confirm inverter compatibility list, protocol, firmware, voltage range and warranty.', caution: 'Use only manufacturer-approved charging settings and battery combinations.' },
-  { category: 'Batteries', title: 'Batteryless / no-battery solar operation', summary: 'How supported systems can run loads from solar without storage.', detail: 'Some inverter models can operate without a battery in a defined mode, using available PV power and sometimes grid assistance. Solar production changes with clouds and time of day, so available output can fall suddenly. Not every hybrid inverter supports this mode; some require a battery to start or stabilise the DC bus.', urdu: 'بغیر بیٹری چلنا ہر hybrid انورٹر میں ممکن نہیں۔ یہ exact model اور manufacturer کی اجازت پر منحصر ہے۔', use: 'Daytime loads where uninterrupted night backup is not required.', types: 'Model-specific PV-only, grid-assisted or batteryless operating modes.', select: 'Check the official manual for batteryless start-up, minimum PV voltage, grid dependency and load limits.', caution: 'Never infer batteryless support from the word “hybrid”. Verify exact model and firmware documentation.' },
-  { category: 'Solar Panels', title: 'Panel technologies and brands', summary: 'Monocrystalline, bifacial, N-type and P-type modules.', detail: 'Monocrystalline describes cells made from single-crystal silicon. Bifacial modules can collect light from the rear when the mounting surface and design allow it. N-type and P-type describe silicon wafer doping approaches; product performance depends on the complete module design, not the label alone.', urdu: 'Bifacial پینل پیچھے سے بھی روشنی لے سکتا ہے، اگر جگہ اور installation اس کے لیے موزوں ہو۔', use: 'Residential rooftops, commercial roofs and solar farms.', types: 'Brands in the market include Jinko, JA Solar, Inverex, SunCore and others; technology varies by exact model.', select: 'Compare official datasheet power, efficiency, dimensions, temperature coefficient, warranty and certifications.', caution: 'Do not combine modules with incompatible electrical ratings in the same string.' },
-  { category: 'Solar Panels', title: '550W, 580W, 600W and panel strings', summary: 'Understand wattage and series/parallel connections.', detail: 'A panel’s wattage is its rated output under standard test conditions, not guaranteed real-world output. Series wiring adds voltage while current is limited by the string; parallel wiring adds current while voltage stays similar. Inverter MPPT limits determine safe string design.', urdu: 'Series میں voltage بڑھتا ہے؛ parallel میں current بڑھتا ہے۔ انورٹر کی حد سے تجاوز نہ کریں۔', use: 'Designing a solar array for an inverter.', types: 'Series strings, parallel strings and approved combinations.', select: 'Use panel Voc, Vmp, Isc, Imp and temperature coefficients with inverter limits.', caution: 'String design must be calculated by a qualified solar designer; cold-weather Voc can exceed the inverter limit.' },
-  { category: 'Solar Panels', title: 'Panel installation and maintenance', summary: 'Orientation, shade, mounting and safe cleaning.', detail: 'Panel output depends on orientation, tilt, shading, temperature and soiling. Mounting must resist local wind loads and avoid roof leaks. Cleaning should follow the panel maker’s guidance and use safe access methods.', urdu: 'سایہ، گرد، زاویہ اور درجہ حرارت پیداوار پر اثر انداز ہوتے ہیں۔', use: 'Rooftop and ground-mounted systems.', types: 'Fixed tilt and engineered mounting structures.', select: 'Check roof condition, structure, wind loading, drainage and maintenance access.', caution: 'Do not walk on modules or clean live electrical equipment with unsafe methods.' },
-  { category: 'Wires & Cables', title: 'AC, DC, copper and aluminium cables', summary: 'Understand conductor material and where each cable is used.', detail: 'AC wiring carries alternating current in building circuits; PV DC cable carries direct current from solar modules. Copper and aluminium have different conductivity, weight, termination and sizing requirements. Cable selection must consider installation method, insulation temperature rating, grouping, ambient temperature and protective device.', urdu: 'AC اور DC کیبل کے استعمال مختلف ہیں۔ copper اور aluminium کے لیے سائز اور termination بھی مختلف ہو سکتے ہیں۔', use: 'PV strings, inverter connections and building circuits.', types: 'Single-core and multi-core, copper and aluminium, AC and PV DC cables.', select: 'Use applicable electrical code tables and manufacturer data; calculate current capacity and voltage drop.', caution: 'Never select cable by cross-section alone or use ordinary building wire where PV-rated cable is required.' },
-  { category: 'Wires & Cables', title: 'Cable sizes and voltage drop', summary: 'Common sizes: 1.5, 2.5, 4, 6, 10 and 16mm² and above.', detail: 'These are common conductor cross-sections, not universal ampacity ratings. Allowable current depends on conductor, insulation, installation method, ambient temperature, grouping and local standards. Longer runs increase voltage drop; DC and AC circuit calculations differ.', urdu: '1.5mm² یا 6mm² کیبل کی load capacity ہر installation میں ایک جیسی نہیں ہوتی۔', use: 'Sizing lighting, sockets, inverter feeders and PV circuits.', types: '1.5, 2.5, 4, 6, 10, 16mm² and larger sizes.', select: 'Calculate design current, correction factors, voltage drop, fault protection and terminal limits.', caution: 'This guide is educational, not a cable sizing approval. Have a qualified electrician calculate the actual installation.' },
-  { category: 'Protection', title: 'MCB, DC breaker and MCCB', summary: 'Protect circuits from overload and short circuit.', detail: 'An MCB is a resettable low-voltage circuit breaker commonly used for branch circuits. DC breakers are designed to interrupt direct current at specified voltage and polarity. MCCBs serve higher current ranges and may offer adjustable trip settings depending on the model.', urdu: 'Breaker کا کام fault یا overload پر circuit کو disconnect کرنا ہے؛ AC breaker کو DC پر خود سے استعمال نہ کریں۔', use: 'Distribution boards, inverter AC/DC circuits and feeders.', types: 'MCB, DC-rated breaker and MCCB.', select: 'Match voltage, current, breaking capacity, poles, trip curve and conductor protection.', caution: 'Use devices with the correct AC/DC rating and interrupting capacity.' },
-  { category: 'Protection', title: 'RCCB, RCBO, SPD and fuses', summary: 'Earth leakage, surge and overcurrent protection.', detail: 'RCCBs detect residual current imbalance but do not normally provide overload protection by themselves. RCBOs combine residual-current and overcurrent protection. SPDs limit transient overvoltage from switching or lightning-induced surges. Fuses open when current exceeds their rating under specified conditions.', urdu: 'RCCB leakage current، RCBO leakage اور overcurrent، جبکہ SPD surge سے حفاظت کے لیے ہوتا ہے۔', use: 'Consumer units, inverter AC/DC protection and sensitive equipment.', types: 'AC/DC SPD types, RCCB, RCBO and correctly rated fuses.', select: 'Choose type, sensitivity, poles, voltage, discharge rating, backup protection and coordination per design.', caution: 'SPD earthing and lead length matter. Protection devices must be coordinated by a qualified designer.' },
-  { category: 'Protection', title: 'Changeover, DB, earthing and lightning', summary: 'Safe source transfer and grounding systems.', detail: 'A changeover switch transfers a load between approved sources and must prevent unsafe backfeed. A distribution board divides circuits and houses protective devices. Earthing provides a fault-current path and helps protective devices operate. Lightning protection is a designed system, not simply a rod attached to a building.', urdu: 'Earthing fault current کے لیے راستہ مہیا کرتی ہے۔ Changeover سے sources کے درمیان محفوظ تبدیلی ہوتی ہے۔', use: 'Homes, shops, solar systems and commercial installations.', types: 'Manual/automatic changeover, DBs, earth electrodes and engineered lightning systems.', select: 'Match source arrangement, neutral switching requirements, fault levels and local code.', caution: 'Never bypass earthing or bond neutral and earth arbitrarily. Installation and testing require a qualified electrician.' },
-  { category: 'Components', title: 'MC4, combiner boxes and mounting', summary: 'Solar connectors, string collection and panel support.', detail: 'MC4-style connectors join compatible PV cables; connector brands and types must be matched and correctly crimped. Combiner boxes collect strings and may include fuses, isolators and SPDs. Mounting structures secure panels and must be engineered for roof and wind conditions.', urdu: 'MC4 connectors compatible اور صحیح crimp ہونے چاہئیں؛ مختلف brands کے connectors کو mix نہ کریں جب تک approval نہ ہو۔', use: 'PV arrays and solar installations.', types: 'PV connectors, string combiner boxes and roof/ground mounting systems.', select: 'Check current/voltage ratings, IP rating, cable size, compatibility and structural design.', caution: 'PV connectors can remain live in sunlight. Do not disconnect under load unless rated for it.' },
-  { category: 'Components', title: 'Contactors, relays, meters and stabilizers', summary: 'Control, measurement and voltage regulation components.', detail: 'Contactors switch power circuits using a control coil. Relays switch control signals or loads according to their ratings. Energy meters measure electrical consumption or export. Voltage stabilizers regulate voltage within a defined range; they do not replace correct wiring or surge protection.', urdu: 'Contactor اور relay switching کے لیے، meter پیمائش کے لیے اور stabilizer voltage regulation کے لیے استعمال ہوتا ہے۔', use: 'Control panels, pumps, buildings and energy monitoring.', types: 'AC/DC contactors, control relays, energy/smart meters and stabilizers.', select: 'Verify coil voltage, contact rating, meter accuracy/direction, CT ratio and stabilizer capacity.', caution: 'Do not exceed contact ratings or assume a stabilizer can correct every supply fault.' },
-  { category: 'Components', title: 'Conduits, panels and accessories', summary: 'Cable routing and distribution accessories.', detail: 'Conduits protect and route conductors. Distribution panels organise breakers, busbars and wiring. Enclosures and glands must suit the environment and cable entry. Smart meters and monitoring devices need compatible wiring and commissioning.', urdu: 'Conduit تاروں کو mechanical protection دیتا ہے، جبکہ distribution panel circuits کو منظم کرتا ہے۔', use: 'New construction, renovations and electrical rooms.', types: 'PVC/metal conduits, trunking, glands, enclosures and panel accessories.', select: 'Consider fill, bend radius, environment, ingress rating, heat and access for maintenance.', caution: 'Do not overcrowd conduits or panels; leave safe working space and label circuits.' }
+const informationTopics = [
+  { icon: Zap, title: 'Solar inverters & models', description: 'Get guidance on inverter brands, models, capacities, phases, hybrid, on-grid and off-grid systems, MPPT, outputs and specifications.' },
+  { icon: BatteryCharging, title: 'Lithium batteries & batteryless systems', description: 'Ask about lithium battery types, capacity, voltage, BMS compatibility, backup planning and inverter models that support batteryless operation.' },
+  { icon: Sun, title: 'Solar panels & specifications', description: 'Learn about panel brands, wattage, technologies, efficiency, datasheets, string design and choosing panels for your system.' },
+  { icon: Cable, title: 'Wires & cables', description: 'Get help understanding AC/DC cables, copper and aluminium conductors, cable sizes, ratings and suitable applications.' },
+  { icon: ShieldCheck, title: 'Electrical protection devices', description: 'Ask about MCB, MCCB, SPD, RCCB, RCBO, fuses, breakers, earthing and protection requirements.' },
+  { icon: Wrench, title: 'Solar installation & electrical wiring', description: 'Discuss solar system installation, inverter connections, electrical wiring, troubleshooting, maintenance and safety.' },
+  { icon: Zap, title: 'Any other electrical or solar component', description: 'Need information about another product, accessory, tool or electrical component? Contact our team and tell us what you need.' },
 ];
 
-const categories = ['All', 'Inverters', 'Batteries', 'Solar Panels', 'Wires & Cables', 'Protection', 'Components'];
-const brands = ['Inverex', 'Knox', 'SunLife', 'Grid Sun', 'Tesla', 'Apex', 'Jinko', 'JA Solar', 'SunCore', 'Other brands'];
+const whatsappUrl = 'https://wa.me/923484092930?text=Hello%20VoltEdge%2C%20I%20need%20information%20about%20an%20electrical%20or%20solar%20product.';
+const emailUrl = 'mailto:voltedge1209@gmail.com?subject=Electrical%20%26%20Solar%20Information';
 
 export default function KnowledgeCenter() {
-  const [query, setQuery] = useState('');
-  const [category, setCategory] = useState('All');
-  const [openTopic, setOpenTopic] = useState('Solar inverter basics');
-  const [loadWatts, setLoadWatts] = useState('800');
-  const [batteryKwh, setBatteryKwh] = useState('5');
-  const [efficiency, setEfficiency] = useState('90');
-  const [dailyKwh, setDailyKwh] = useState('12');
-  const [sunHours, setSunHours] = useState('5');
-  const [derate, setDerate] = useState('80');
-
-  const filtered = useMemo(() => topics.filter(t =>
-    (category === 'All' || t.category === category) &&
-    (t.title + ' ' + t.summary + ' ' + t.detail + ' ' + t.category).toLowerCase().includes(query.toLowerCase())
-  ), [category, query]);
-
-  const backup = Number(batteryKwh) * (Number(efficiency) / 100) / (Number(loadWatts) / 1000);
-  const solarKw = Number(dailyKwh) / (Number(sunHours) * (Number(derate) / 100));
-  const safeNumber = (n: number) => Number.isFinite(n) && n > 0;
-
   return (
-    <section className="knowledge-center" id="knowledge-center">
-      <div className="kc-hero">
-        <div className="kc-container">
-          <div className="kc-eyebrow"><BookOpen size={15}/> VOLTEDGE LEARNING HUB</div>
-          <h2>Electrical &amp; Solar Knowledge Center</h2>
-          <h3>Learn Before You Buy</h3>
-          <p>Understand inverters, batteries, solar panels, cables and protection equipment before choosing a product or planning an installation.</p>
-          <p className="kc-urdu" lang="ur" dir="rtl">خریدنے یا انسٹال کرنے سے پہلے بجلی اور سولر کے آلات کو آسان زبان میں سمجھیں۔</p>
-          <div className="kc-hero-actions">
-            <a href="#kc-library">Explore learning topics <ChevronDown size={16}/></a>
-            <a href="https://wa.me/923484092930?text=Hello%20VoltEdge%2C%20I%20need%20electrical%20or%20solar%20guidance." target="_blank" rel="noreferrer"><MessageCircle size={16}/> Ask VoltEdge</a>
+    <section
+      className="knowledge-center"
+      id="knowledge-center"
+      style={{ padding: 'clamp(48px, 7vw, 88px) 20px', background: 'linear-gradient(180deg, #f7fafc 0%, #ffffff 100%)' }}
+    >
+      <div className="kc-container" style={{ maxWidth: 1160, margin: '0 auto' }}>
+        <div style={{ maxWidth: 790, margin: '0 auto 38px', textAlign: 'center' }}>
+          <div
+            className="kc-eyebrow"
+            style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9, color: '#0f766e', fontWeight: 700, letterSpacing: '0.12em', fontSize: 12, marginBottom: 16 }}
+          >
+            <Zap size={16} /> VOLTEDGE EXPERT GUIDANCE
           </div>
-          <div className="kc-stats">
-            <span><Zap/> Inverter guides</span><span><BatteryCharging/> Battery basics</span><span><ShieldCheck/> Electrical safety</span><span><Calculator/> Free calculators</span>
+          <h2 style={{ color: '#102a43', fontSize: 'clamp(30px, 4.5vw, 46px)', lineHeight: 1.12, fontWeight: 800, margin: '0 0 14px' }}>
+            Electrical &amp; Solar Information
+          </h2>
+          <h3 style={{ color: '#0f766e', fontSize: 'clamp(20px, 2.5vw, 26px)', fontWeight: 700, margin: '0 0 16px' }}>
+            Get Expert Guidance
+          </h3>
+          <p style={{ color: '#526477', fontSize: 17, lineHeight: 1.8, margin: 0 }}>
+            Want to learn about any electrical or solar product? Contact us through WhatsApp or Email, and our team will provide you with the information you need.
+          </p>
+        </div>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+            gap: 16,
+            marginBottom: 34,
+          }}
+        >
+          {informationTopics.map(({ icon: Icon, title, description }, index) => (
+            <article
+              key={title}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 15,
+                padding: '22px 20px',
+                background: '#ffffff',
+                border: '1px solid #e4ebf1',
+                borderRadius: 14,
+                boxShadow: '0 5px 20px rgba(16, 42, 67, 0.045)',
+              }}
+            >
+              <span
+                aria-hidden="true"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flex: '0 0 44px',
+                  width: 44,
+                  height: 44,
+                  borderRadius: 12,
+                  color: '#0f766e',
+                  background: '#e8f5f3',
+                }}
+              >
+                <Icon size={21} />
+              </span>
+              <div>
+                <h4 style={{ color: '#16324f', fontSize: 16, fontWeight: 700, lineHeight: 1.4, margin: '1px 0 7px' }}>
+                  {index + 1}. {title}
+                </h4>
+                <p style={{ color: '#607286', fontSize: 14, lineHeight: 1.7, margin: 0 }}>{description}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div
+          style={{
+            textAlign: 'center',
+            padding: 'clamp(24px, 4vw, 38px)',
+            borderRadius: 18,
+            background: '#102a43',
+            color: '#ffffff',
+          }}
+        >
+          <h3 style={{ color: '#ffffff', fontSize: 'clamp(21px, 3vw, 27px)', fontWeight: 750, margin: '0 0 10px' }}>
+            Talk to the VoltEdge Team
+          </h3>
+          <p style={{ color: '#d6e2ed', fontSize: 15, lineHeight: 1.7, margin: '0 auto 22px', maxWidth: 620 }}>
+            Tell us which product or topic you want to understand. We will be happy to guide you.
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 10,
+                minHeight: 48,
+                padding: '12px 22px',
+                borderRadius: 9,
+                background: '#16a34a',
+                color: '#ffffff',
+                fontWeight: 700,
+                textDecoration: 'none',
+              }}
+            >
+              <MessageCircle size={19} /> WhatsApp: +923484092930
+            </a>
+            <a
+              href={emailUrl}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 10,
+                minHeight: 48,
+                padding: '12px 22px',
+                borderRadius: 9,
+                background: '#ffffff',
+                color: '#102a43',
+                fontWeight: 700,
+                textDecoration: 'none',
+              }}
+            >
+              <Mail size={19} /> voltedge1209@gmail.com
+            </a>
           </div>
         </div>
-      </div>
-
-      <div className="kc-container kc-main" id="kc-library">
-        <div className="kc-intro">
-          <div><span className="kc-label">KNOWLEDGE LIBRARY</span><h3>Find the right information</h3><p>Search by product, brand, specification or topic. Open any guide to read what it does, where it is used and what to check before buying.</p></div>
-          <div className="kc-search"><Search size={18}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search inverter, LiFePO4, MC4, MCB, 48V..." aria-label="Search electrical knowledge"/></div>
-        </div>
-        <div className="kc-categories" role="group" aria-label="Knowledge categories">
-          {categories.map(c => <button key={c} className={category === c ? 'active' : ''} onClick={() => setCategory(c)}>{c}</button>)}
-        </div>
-        <div className="kc-topic-list">
-          {filtered.map(t => <article className="kc-topic" key={t.title}>
-            <button className="kc-topic-toggle" onClick={() => setOpenTopic(openTopic === t.title ? '' : t.title)} aria-expanded={openTopic === t.title}>
-              <span><small>{t.category}</small><b>{t.title}</b><em>{t.summary}</em></span><ChevronDown className={openTopic === t.title ? 'rotated' : ''}/>
-            </button>
-            {openTopic === t.title && <div className="kc-topic-detail">
-              <p>{t.detail}</p><p className="kc-urdu" lang="ur" dir="rtl">{t.urdu}</p>
-              <div className="kc-detail-grid"><div><b>Where it is used</b><p>{t.use}</p></div><div><b>Types and specifications</b><p>{t.types}</p></div><div><b>How to select</b><p>{t.select}</p></div></div>
-              <div className="kc-warning"><AlertTriangle size={17}/><span><b>Important safety / verification note</b><br/>{t.caution}</span></div>
-              <a className="kc-whatsapp" href={'https://wa.me/923484092930?text=' + encodeURIComponent('Hello VoltEdge, I have a question about ' + t.title + '.') } target="_blank" rel="noreferrer"><MessageCircle size={15}/> Ask about this topic</a>
-            </div>}
-          </article>)}
-          {filtered.length === 0 && <div className="kc-empty">No matching guide found. Try a different keyword or choose “All”.</div>}
-        </div>
-
-        <div className="kc-brand-panel">
-          <div><span className="kc-label">BRANDS & PRODUCT FAMILIES</span><h3>Research the exact model</h3><p>Brand names are a starting point only. Features and compatibility vary by model and revision.</p></div>
-          <div className="kc-brand-tags">{brands.map(b => <span key={b}>{b}</span>)}</div>
-          <p className="kc-footnote"><Info size={15}/> Always request the official datasheet, installation manual, warranty terms and exact model code before purchasing.</p>
-        </div>
-
-        <div className="kc-tools">
-          <div className="kc-tools-heading"><span className="kc-label">INTERACTIVE TOOLS</span><h3>Plan your system with estimates</h3><p>These calculators provide rough planning estimates, not an installation design or product approval.</p></div>
-          <div className="kc-calculator-grid">
-            <div className="kc-calculator">
-              <div className="kc-calc-title"><BatteryCharging/><span><b>Battery backup estimator</b><small>Approximate runtime</small></span></div>
-              <label>Battery nominal capacity (kWh)<input type="number" min="0.1" step="0.1" value={batteryKwh} onChange={e => setBatteryKwh(e.target.value)}/></label>
-              <label>Average AC load (watts)<input type="number" min="1" value={loadWatts} onChange={e => setLoadWatts(e.target.value)}/></label>
-              <label>Estimated inverter efficiency (%)<input type="number" min="1" max="100" value={efficiency} onChange={e => setEfficiency(e.target.value)}/></label>
-              <div className="kc-result"><small>Estimated backup time</small><b>{safeNumber(Number(batteryKwh)) && safeNumber(Number(loadWatts)) && safeNumber(Number(efficiency)) && Number(efficiency) <= 100 ? backup.toFixed(2) + ' hours' : 'Enter valid values'}</b><span>Actual runtime depends on usable battery energy, BMS limits, temperature and changing loads.</span></div>
-            </div>
-            <div className="kc-calculator">
-              <div className="kc-calc-title"><Sun/><span><b>Solar array size estimator</b><small>Daily energy target</small></span></div>
-              <label>Daily energy use (kWh)<input type="number" min="0.1" step="0.1" value={dailyKwh} onChange={e => setDailyKwh(e.target.value)}/></label>
-              <label>Peak sun hours per day<input type="number" min="0.1" step="0.1" value={sunHours} onChange={e => setSunHours(e.target.value)}/></label>
-              <label>System performance factor (%)<input type="number" min="1" max="100" value={derate} onChange={e => setDerate(e.target.value)}/></label>
-              <div className="kc-result"><small>Estimated PV array rating</small><b>{safeNumber(Number(dailyKwh)) && safeNumber(Number(sunHours)) && safeNumber(Number(derate)) && Number(derate) <= 100 ? solarKw.toFixed(2) + ' kW' : 'Enter valid values'}</b><span>Weather, shading, orientation, seasonal sun and system losses affect actual generation.</span></div>
-            </div>
-          </div>
-        </div>
-
-        <div className="kc-comparison">
-          <span className="kc-label">QUICK COMPARISON</span><h3>Understand the difference</h3>
-          <div className="kc-table-wrap"><table><thead><tr><th>Technology</th><th>Main purpose</th><th>Key check before buying</th></tr></thead><tbody>
-            <tr><td>Hybrid inverter</td><td>Coordinates supported solar, grid and battery sources</td><td>Backup mode, battery compatibility and grid settings</td></tr>
-            <tr><td>On-grid inverter</td><td>Works in synchronisation with utility grid</td><td>Anti-islanding and approved export configuration</td></tr>
-            <tr><td>Off-grid inverter</td><td>Creates a local supply for supported loads</td><td>Battery needs, surge rating and PV input limits</td></tr>
-            <tr><td>LiFePO4 battery</td><td>Rechargeable lithium energy storage</td><td>BMS, usable kWh, protocol and warranty</td></tr>
-            <tr><td>Tubular battery</td><td>Lead-acid energy storage</td><td>Maintenance, ventilation, discharge depth and charging</td></tr>
-            <tr><td>MCB / DC breaker</td><td>Overcurrent and fault interruption</td><td>Correct AC/DC rating, voltage and breaking capacity</td></tr>
-          </tbody></table></div>
-        </div>
-
-        <div className="kc-final-warning"><ShieldCheck/><div><b>Electrical safety comes first</b><p>Solar DC circuits can remain energised in daylight. Incorrect wiring, undersized cables, unsuitable breakers, poor earthing or unsafe battery handling can cause fire, electric shock or equipment damage. Have design, installation, testing and commissioning completed by a qualified electrician/solar professional, following local rules and manufacturer instructions.</p></div></div>
       </div>
     </section>
   );
